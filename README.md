@@ -1,1 +1,2 @@
-# brief_assur_aimant
+# Dev IA P3 / Assur'Aimant
+## Par Emad et Cédric
