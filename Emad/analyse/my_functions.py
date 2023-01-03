@@ -3,6 +3,10 @@ import seaborn as sns
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats as stats
+from scipy.stats import shapiro 
+from scipy.stats import kstest
+import pandas as pd
 
 
 def get_outliers_length(data):
@@ -46,3 +50,6 @@ def boxplot_all_numeric_columns(data):
 
     plt.tight_layout()
     plt.show()
+
+
+
