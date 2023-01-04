@@ -53,3 +53,43 @@ def boxplot_all_numeric_columns(data):
 
 
 
+
+def correlation_test(data, alpha):
+  # Get the column names
+  cols = data.columns
+  
+  # Iterate over all pairs of columns
+  for i in range(len(cols)):
+    for j in range(i+1, len(cols)):
+      # Get the column pair
+      col1 = cols[i]
+      col2 = cols[j]
+      
+      # Get the correlation and p-value
+      corr, p_value = stats.pearsonr(data[col1], data[col2])
+      
+      # Print the interpretation of the correlation
+      if corr > 0:
+        print(f"There is a positive correlation between {col1} and {col2}")
+      elif corr < 0:
+        print(f"There is a negative correlation between {col1} and {col2}")
+      else:
+        print(f"There is no correlation between {col1} and {col2}")
+      
+      if abs(corr) > 0.9:
+        print(f"This is a strong correlation (r = {round(corr,4)}).")
+      elif abs(corr) > 0.7:
+        print(f"This is a moderate correlation (r = {round(corr,4)}).")
+      elif abs(corr) > 0.5:
+        print(f"This is a weak correlation (r = {round(corr,4)}).")
+      else:
+        print(f"This is a very weak correlation (r = {round(corr,4)}).")
+      
+      # Print the interpretation of the p-value
+      if p_value < alpha:
+        print(f"There is a statistically significant association between {col1} and {col2} (p-value = {p_value:.4f})")
+      else:
+        print(f"There is no statistically significant association between {col1} and {col2} (p-value = {p_value:.4f})")
+      
+      print()
+
