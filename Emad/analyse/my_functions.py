@@ -53,6 +53,7 @@ def boxplot_all_numeric_columns(data):
 
 
 
+import scipy.stats as stats
 
 def correlation_test(data, alpha):
   # Get the column names
@@ -92,4 +93,89 @@ def correlation_test(data, alpha):
         print(f"There is no statistically significant association between {col1} and {col2} (p-value = {p_value:.4f})")
       
       print()
+        
 
+
+
+def make_jointplot(data, column1, column2, hue, kind ):
+    # Create a jointplot
+    plot = sns.jointplot(data=data, x=column1, y=column2, kind=kind, hue = hue)
+    
+    # Calculate the Pearson correlation coefficient and p value
+    corr, p = stats.pearsonr(data[column1], data[column2])
+    
+    # Update the title with the correlation and p value
+    plot.fig.suptitle(f"Correlation: {corr:.2f}, p-value: {p:.2e}")
+    
+    # Show the plot
+    plt.show()
+    
+
+  
+def calc_corr_pvalue(data, var1, var2, group_var):
+  # Group the data by the group variable
+  groups = data.groupby(group_var)
+  
+  # Create an empty list to store the results
+  results = []
+  
+  # Iterate over the groups
+  for name, group in groups:
+    # Calculate the Pearson correlation coefficient and p value
+    corr, p = stats.pearsonr(group[var1], group[var2])
+    
+    # Store the results in a tuple
+    results.append((name, corr, p))
+    
+  # Create a DataFrame from the results
+  df = pd.DataFrame(results, columns=[group_var, "correlation", "p_value"])
+  
+  return df
+
+
+
+
+
+
+
+
+
+def calc_corr_pvalue(data, var1, var2, group_var, alpha):
+  # Group the data by the group variable
+  groups = data.groupby(group_var)
+  
+  # Create an empty list to store the results
+  results = []
+  
+  # Iterate over the groups
+  for name, group in groups:
+    # Calculate the Pearson correlation coefficient and p value
+    corr, p = stats.pearsonr(group[var1], group[var2])
+    
+    # Store the results in a tuple
+    results.append((name, corr, p))
+    
+  # Create a DataFrame from the results
+  df = pd.DataFrame(results, columns=[group_var, "correlation", "p_value"])
+  
+  # Create the title string
+  title = f"Correlation between {var1} and {var2} grouped by {group_var}:"
+  border = "-" * len(title)
+  title_str = f"\n{border}\n{title}\n{border}\n"
+  
+  # Print the title
+  print(title_str)
+
+  print("")
+  print(df.to_string(index=False))
+  print("")
+  # Iterate over the rows of the DataFrame
+  for i, row in df.iterrows():
+    # Get the p value
+    p = row["p_value"]
+    
+    # Print the interpretation of the p value
+    if p < alpha:
+      print(f"{row[group_var]}: There is a statistically significant association (p-value = {p:.4f})")
+    else:
+      print(f"{row[group_var]}: There is no statistically significant association (p-value = {p:.4f})")
