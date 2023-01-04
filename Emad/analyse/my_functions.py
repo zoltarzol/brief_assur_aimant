@@ -10,6 +10,15 @@ import pandas as pd
 
 
 def get_outliers_length(data):
+    """
+    Get the outlier values in a numeric column.
+    
+    Parameters:
+    column (pandas Series): The column to use for the calculations.
+    
+    Returns:
+    list: A list of outlier values.
+    """
     # Extract the outlier values from the data
     for i in data.columns:
         if data[i].dtype in ["int64", "float64"]:
@@ -24,6 +33,16 @@ def get_outliers_length(data):
         
 
 def get_outliers_by_column(column):
+
+  """
+  Get the outlier values in a numeric column.
+  
+  Parameters:
+  column (pandas Series): The column to use for the calculations.
+  
+  Returns:
+  list: A list of outlier values.
+  """
   if column.dtype in ["int64", "float64"]:
           return [y for stat in boxplot_stats(column) for y in stat['fliers']]
   else:
@@ -33,6 +52,16 @@ def get_outliers_by_column(column):
 
 
 def boxplot_all_numeric_columns(data):
+    """
+    Create boxplots for all numeric columns in a DataFrame.
+    
+    Parameters:
+    data (pandas DataFrame): The data to use for the plots.
+    
+    Returns:
+    None: The function creates plots using Matplotlib.
+    """
+
     # Select only the numeric columns
     numeric_data = data.select_dtypes(include=['int64', 'float64'])
 
@@ -53,9 +82,19 @@ def boxplot_all_numeric_columns(data):
 
 
 
-import scipy.stats as stats
 
 def correlation_test(data, alpha):
+
+  """
+  Test for correlations and statistical significance between all pairs of columns in a DataFrame.
+  
+  Parameters:
+  data (pandas DataFrame): The data to use for the test.
+  alpha (float): The significance level to use for the hypothesis test.
+  
+  Returns:
+  None: The function prints the results to the console.
+  """
   # Get the column names
   cols = data.columns
   
@@ -98,6 +137,21 @@ def correlation_test(data, alpha):
 
 
 def make_jointplot(data, column1, column2, hue, kind ):
+
+    """
+    Create a joint plot showing the relationship between two variables and the distribution of each.
+    
+    Parameters:
+    data (pandas DataFrame): The data to use for the plot.
+    column1 (str): The name of the first variable.
+    column2 (str): The name of the second variable.
+    hue (str): The name of the variable to use for the color of the points in the plot.
+    kind (str): The type of plot to create. Can be "scatter", "reg", "resid", "kde", or "hex".
+    
+    Returns:
+    None: The function creates a plot using Matplotlib.
+    """
+
     # Create a jointplot
     plot = sns.jointplot(data=data, x=column1, y=column2, kind=kind, hue = hue)
     
@@ -112,25 +166,7 @@ def make_jointplot(data, column1, column2, hue, kind ):
     
 
   
-def calc_corr_pvalue(data, var1, var2, group_var):
-  # Group the data by the group variable
-  groups = data.groupby(group_var)
-  
-  # Create an empty list to store the results
-  results = []
-  
-  # Iterate over the groups
-  for name, group in groups:
-    # Calculate the Pearson correlation coefficient and p value
-    corr, p = stats.pearsonr(group[var1], group[var2])
-    
-    # Store the results in a tuple
-    results.append((name, corr, p))
-    
-  # Create a DataFrame from the results
-  df = pd.DataFrame(results, columns=[group_var, "correlation", "p_value"])
-  
-  return df
+
 
 
 
@@ -141,6 +177,21 @@ def calc_corr_pvalue(data, var1, var2, group_var):
 
 
 def calc_corr_pvalue(data, var1, var2, group_var, alpha):
+
+  """
+  Calculate the Pearson correlation coefficient and p value for the correlation between two variables, grouped by a third variable.
+  
+  Parameters:
+  data (pandas DataFrame): The data to use for the calculations.
+  var1 (str): The name of the first variable.
+  var2 (str): The name of the second variable.
+  group_var (str): The name of the variable to group the data by.
+  alpha (float): The significance level to use for the hypothesis test.
+  
+  Returns:
+  None: The function prints the results to the console.
+  """
+
   # Group the data by the group variable
   groups = data.groupby(group_var)
   
@@ -179,3 +230,66 @@ def calc_corr_pvalue(data, var1, var2, group_var, alpha):
       print(f"{row[group_var]}: There is a statistically significant association (p-value = {p:.4f})")
     else:
       print(f"{row[group_var]}: There is no statistically significant association (p-value = {p:.4f})")
+
+
+
+
+
+
+
+
+
+
+def point_biserial_correlation(data: pd.DataFrame, x_col: str, y_col: str, alpha: float = 0.05) -> None:
+    """
+    Calculate the point biserial correlation coefficient between two variables in a Pandas DataFrame.
+    
+    Parameters:
+    data (pd.DataFrame): The DataFrame containing the two variables.
+    x_col (str): The name of the continuous variable.
+    y_col (str): The name of the dichotomous variable.
+    alpha (float): The significance level (default is 0.05).
+    
+    Returns:
+    None
+
+    Example:
+    >>> data = pd.DataFrame({'charges': [1000, 2000, 3000, 4000, 5000], 'sex': ['male', 'male', 'female', 'female', 'male']})
+    >>> point_biserial_correlation(data, 'charges', 'sex', alpha=0.05)
+    ----------------------------
+    | Correlation between "charges" and "sex" |
+    ----------------------------
+    There is a significant difference in the means of the continuous variable between the two groups defined by the dichotomous variable.
+    
+    """
+    # Extract the variables from the DataFrame
+    x = data[x_col]
+    y = data[y_col]
+    
+    # Convert the dichotomous variable to a list of 0s and 1s
+    y = [0 if yi == y.unique()[0] else 1 for yi in y]
+    
+    # Calculate the point biserial correlation coefficient and p-value
+    rpb, p_value = stats.pointbiserialr(x, y)
+    
+    # Split the continuous variable data into two groups based on the dichotomous variable
+    x_group1 = [x[i] for i in range(len(y)) if y[i] == 0]
+    x_group2 = [x[i] for i in range(len(y)) if y[i] == 1]
+    
+    # Perform the t-test
+    t, p_value_ttest = stats.ttest_ind(x_group1, x_group2)
+    
+    # Print the title in a boxed format
+    title = f'Correlation between "{x_col}" and "{y_col}"'
+    print('-' * (len(title) + 4))
+    print(f'| {title} |')
+    print('-' * (len(title) + 4))
+    print(f'Point biserial correlation coefficient: {rpb:.3f}')
+    print(f't-value: {t:.3f}')
+    print(f'p-value: {p_value:.3f}')
+    
+    # Print the interpretation of the p-value
+    if p_value_ttest < alpha:
+        print('There is a significant difference in the means of the continuous variable between the two groups defined by the dichotomous variable.')
+    else:
+        print('There is not a significant difference in the means of the continuous variable between the two groups defined by the dichotomous variable.')
