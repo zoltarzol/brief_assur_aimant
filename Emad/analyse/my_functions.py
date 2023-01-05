@@ -377,6 +377,23 @@ def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.0
     print(anova_table)
     print()
 
+
+    """
+    The function below was created specifically for the one-way ANOVA table results returned for Type II sum of squares
+    """
+    def anova_table_complet(anova_table):
+        anova_table['mean_sq'] = anova_table[:]['sum_sq']/anova_table[:]['df']
+
+        anova_table['eta_sq'] = anova_table[:-1]['sum_sq']/sum(anova_table['sum_sq'])
+
+        anova_table['omega_sq'] = (anova_table[:-1]['sum_sq']-(anova_table[:-1]['df']*anova_table['mean_sq'][-1]))/(sum(anova_table['sum_sq'])+anova_table['mean_sq'][-1])
+
+        cols = ['sum_sq', 'df', 'mean_sq', 'F', 'PR(>F)', 'eta_sq', 'omega_sq']
+        anova_table = anova_table[cols]
+        return anova_table
+
+    print((anova_table_complet(anova_table)))
+
     # Print the interpretation of the p-value
     if p_value < alpha:
         print(f'The p-value of {p_value:.3f} is statistically significant at a level of {alpha}.')
