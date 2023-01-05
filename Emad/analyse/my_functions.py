@@ -413,3 +413,221 @@ def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.0
         print(f'The p-value of {p_value:.3f} is not statistically significant at a level of {alpha}.')
         print(f'This suggests that there is not a significant differences among the independent variable "{x_col}".')
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def check_normality(model, alpha=0.05):
+    """
+    Check the assumption of normality of residuals using the Shapiro-Wilk test.
+    
+    The Shapiro-Wilk test tests the null hypothesis that the data was drawn from a normal distribution.
+    
+    Parameters:
+    residuals (array-like): residuals to be tested
+    alpha (float): significance level (default=0.05)
+    
+    Returns:
+    bool: True if residuals are normal, False otherwise
+    float: test statistic
+    float: p-value
+    """
+    W, p = stats.shapiro(model.resid)
+    if p > alpha:
+        return True, W, p
+    else:
+        return False, W, p
+
+
+
+
+def plot_residual_probability(model):
+    """
+    Plot a probability plot of the residuals of a model.
+    
+    Parameters:
+    model (object): a model with a `resid` attribute, such as an OLS model from statsmodels
+    
+    Returns:
+    None
+    
+    Example:
+    --------
+    model = sm.OLS(y, X).fit()
+    plot_residual_probability(model)
+    """
+    fig = plt.figure(figsize=(7, 7))
+    ax = fig.add_subplot(111)
+    
+    normality_plot, stat = stats.probplot(model.resid, plot=plt, rvalue=True)
+    ax.set_title("Probability plot of model residuals", fontsize=20)
+    
+    plt.show()
+
+
+
+
+def kruskal_test(df, x, y, alpha=0.05):
+    """
+    Perform the Kruskal-Wallis test to compare the means of a numerical variable across different categories of a categorical variable.
+    The Kruskal-Wallis H-test tests the null hypothesis that the population median of all of the groups are equal.
+    Parameters:
+    df (DataFrame): dataframe containing the variables
+    x (string): name of the numerical variable
+    y (string): name of the categorical variable
+    alpha (float): significance level (default=0.05)
+    
+    Returns:
+    float: test statistic
+    float: p-value
+    """
+    categories = df[y].unique()
+    data = [df[x][df[y] == category] for category in categories]
+    stat, p = stats.kruskal(*data)
+    return stat, p
+
+
+
+def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.05) -> None:
+    """
+    Perform a one-way ANOVA on two variables in a Pandas DataFrame.
+    Null hypothesis: Groups means are equal (no variation in means of groups)
+    H0: μ1=μ2=…=μp
+    Alternative hypothesis: At least, one group mean is different from other groups
+    H1: All μ are not equal
+    
+    Parameters:
+    data (pd.DataFrame): The DataFrame containing the two variables.
+    y_col (str): The name of the dependent variable.
+    x_col (str): The name of the independent variable.
+    alpha (float): The significance level (default is 0.05).
+    
+    Returns:
+    None
+
+    Example:
+    >>> one_way_anova(data, 'charges', 'children', alpha=0.05)
+    """
+      # Assert that the input is a Pandas DataFrame
+    assert isinstance(data, pd.DataFrame), 'data must be a Pandas DataFrame'
+    
+    # Assert that the dependent and independent variables are columns in the DataFrame
+    assert y_col in data.columns, f'{y_col} is not a column in the DataFrame'
+    assert x_col in data.columns, f'{x_col} is not a column in the DataFrame'
+    
+    # Assert that the independent variable has more than two levels
+    assert len(data[x_col].unique()) > 2, 'the independent variable must have more than two levels'
+    
+    # Assert that the significance level is between 0 and 1
+    assert 0 < alpha < 1, 'alpha must be between 0 and 1'
+    
+
+
+    # Extract the dependent and independent variables
+    y = data[y_col]
+    x = data[x_col]
+    
+    # Split the data into separate arrays for each level of the independent variable
+    groups = []
+    levels = x.unique()
+    for level in levels:
+        group = y[x == level]
+        groups.append(group)
+    
+    # Perform the one-way ANOVA
+    f_value, p_value = stats.f_oneway(*groups)
+    
+    # Print the title in a boxed format
+    title = f'ANOVA between "{y_col}" and "{x_col}"'
+    print('-' * (len(title) + 4))
+    print(f'| {title} |')
+    print('-' * (len(title) + 4))
+    
+    # Print the results
+    print(f'F-value: {f_value:.3f}')
+    print(f'p-value: {p_value:.3f}')
+    
+    
+    # Perform the one-way ANOVA
+    model = ols('y ~ C(x)', data=data).fit()
+    anova_table = sm.stats.anova_lm(model, typ=2)
+    print(anova_table)
+    print()
+
+
+    """
+    The function below was created specifically for the one-way ANOVA table results returned for Type II sum of squares
+    """
+    def anova_table_complet(anova_table):
+        anova_table['mean_sq'] = anova_table[:]['sum_sq']/anova_table[:]['df']
+
+        anova_table['eta_sq'] = anova_table[:-1]['sum_sq']/sum(anova_table['sum_sq'])
+
+        anova_table['omega_sq'] = (anova_table[:-1]['sum_sq']-(anova_table[:-1]['df']*anova_table['mean_sq'][-1]))/(sum(anova_table['sum_sq'])+anova_table['mean_sq'][-1])
+
+        cols = ['sum_sq', 'df', 'mean_sq', 'F', 'PR(>F)', 'eta_sq', 'omega_sq']
+        anova_table = anova_table[cols]
+        return anova_table
+
+    print((anova_table_complet(anova_table)))
+
+    # Print the interpretation of the p-value
+    if p_value < alpha:
+        print(f'The p-value of {p_value:.3f} is statistically significant at a level of {alpha}.')
+        print(f'This suggests that there is a significant differences among the independent variable "{x_col}".')
+        print(f"But we don't know which group is different from which.\nWe have to do post-hoc analysis using Tukey HSD (Honest Significant Difference) Test.")
+        print()
+        from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
+        # compare the height between each diet, using 95% confidence interval 
+        mc = MultiComparison(y, x)
+        tukey_result = mc.tukeyhsd(alpha=0.05)
+
+        print(tukey_result)
+        print(f'Unique "{x_col}" groups: {mc.groupsunique}')
+        print()
+        print("Reject : True means there is statistically significant difference.")
+    else:
+        print(f'The p-value of {p_value:.3f} is not statistically significant at a level of {alpha}.')
+        print(f'This suggests that there is not a significant differences among the independent variable "{x_col}".')
+    
+    phrase = "............. ASSUMPTION CHECK (Normality)"
+    print(phrase.rjust(25, ' '))
+    print("="*50)
+    print("The assumption of normality is tested on the residuals")
+    is_normal, stat, p = check_normality(model, alpha)
+
+    if is_normal:
+        print("Residuals are normal (stat (W) ={:.3f}, p={:.3f})".format(stat, p))
+    else:
+        print("Residuals are not normal (stat (W) ={:.3f}, p={:.3f})".format(stat, p))
+        plot_residual_probability(model)
+        print()
+        print("As the assumption of normality is not met,\nwe can use a nonparametric test that does not assume normality")
+        print("such as the Kruskal-Wallis test")
+        print()
+        print("............. Kruskal-Wallis test")
+        statistic, pvalue_K = kruskal_test(data, y= x_col, x = y_col, alpha=alpha)
+        print(f"statistic :", round(statistic,4))
+        print(f"pvalue :", round(pvalue_K,4))
+        if pvalue_K > alpha:
+            print(f"pvalue is greater than alpha ({alpha}) \nThis means that at least one category is significantly different from the others")
+        else :
+            print(f"pvalue is LESS than alpha ({alpha}) \nNo significant differences between categories")
+
+        
+    
+    
