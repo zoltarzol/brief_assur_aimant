@@ -7,6 +7,9 @@ import scipy.stats as stats
 from scipy.stats import shapiro 
 from scipy.stats import kstest
 import pandas as pd
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
 
 
 def get_outliers_length(data):
@@ -293,3 +296,103 @@ def point_biserial_correlation(data: pd.DataFrame, x_col: str, y_col: str, alpha
         print('There is a significant difference in the means of the continuous variable between the two groups defined by the dichotomous variable.')
     else:
         print('There is not a significant difference in the means of the continuous variable between the two groups defined by the dichotomous variable.')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.05) -> None:
+    """
+    Perform a one-way ANOVA on two variables in a Pandas DataFrame.
+    Null hypothesis: Groups means are equal (no variation in means of groups)
+    H0: μ1=μ2=…=μp
+    Alternative hypothesis: At least, one group mean is different from other groups
+    H1: All μ are not equal
+    
+    Parameters:
+    data (pd.DataFrame): The DataFrame containing the two variables.
+    y_col (str): The name of the dependent variable.
+    x_col (str): The name of the independent variable.
+    alpha (float): The significance level (default is 0.05).
+    
+    Returns:
+    None
+
+    Example:
+    >>> one_way_anova(data, 'charges', 'children', alpha=0.05)
+    """
+      # Assert that the input is a Pandas DataFrame
+    assert isinstance(data, pd.DataFrame), 'data must be a Pandas DataFrame'
+    
+    # Assert that the dependent and independent variables are columns in the DataFrame
+    assert y_col in data.columns, f'{y_col} is not a column in the DataFrame'
+    assert x_col in data.columns, f'{x_col} is not a column in the DataFrame'
+    
+    # Assert that the independent variable has more than two levels
+    assert len(data[x_col].unique()) > 2, 'the independent variable must have more than two levels'
+    
+    # Assert that the significance level is between 0 and 1
+    assert 0 < alpha < 1, 'alpha must be between 0 and 1'
+    
+
+
+    # Extract the dependent and independent variables
+    y = data[y_col]
+    x = data[x_col]
+    
+    # Split the data into separate arrays for each level of the independent variable
+    groups = []
+    levels = x.unique()
+    for level in levels:
+        group = y[x == level]
+        groups.append(group)
+    
+    # Perform the one-way ANOVA
+    f_value, p_value = stats.f_oneway(*groups)
+    
+    # Print the title in a boxed format
+    title = f'ANOVA between "{y_col}" and "{x_col}"'
+    print('-' * (len(title) + 4))
+    print(f'| {title} |')
+    print('-' * (len(title) + 4))
+    
+    # Print the results
+    print(f'F-value: {f_value:.3f}')
+    print(f'p-value: {p_value:.3f}')
+    
+    
+    # Perform the one-way ANOVA
+    model = ols('y ~ C(x)', data=data).fit()
+    anova_table = sm.stats.anova_lm(model, typ=2)
+    print(anova_table)
+    print()
+
+    # Print the interpretation of the p-value
+    if p_value < alpha:
+        print(f'The p-value of {p_value:.3f} is statistically significant at a level of {alpha}.')
+        print(f'This suggests that there is a significant differences among the independent variable "{x_col}".')
+        print(f"But we don't know which group is different from which.\nWe have to do post-hoc analysis using Tukey HSD (Honest Significant Difference) Test.")
+        print()
+        from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
+        # compare the height between each diet, using 95% confidence interval 
+        mc = MultiComparison(y, x)
+        tukey_result = mc.tukeyhsd(alpha=0.05)
+
+        print(tukey_result)
+        print(f'Unique "{x_col}" groups: {mc.groupsunique}')
+        print()
+        print("Reject : True means there is statistically significant difference.")
+    else:
+        print(f'The p-value of {p_value:.3f} is not statistically significant at a level of {alpha}.')
+        print(f'This suggests that there is not a significant differences among the independent variable "{x_col}".')
+    
