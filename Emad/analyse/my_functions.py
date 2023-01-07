@@ -11,6 +11,73 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 
 
+def normalize(column):
+    print('############################# ORIGINAL DATA #############################')
+    print("Agostino and Pearson's test")
+    print(stats.normaltest(column))
+    print("Shapiro-Wilk test")
+    print(shapiro(column))
+    print("Kolmogorov-Smirnov test")
+    print(kstest(column, 'norm'))
+    print('*'*50)
+
+    print('#############################LOG TRANSFORMATION #############################')
+    print("Agostino and Pearson's test")
+    print(stats.normaltest(np.log(column)))
+    print("Shapiro-Wilk test")
+    print(shapiro(np.log(column)))
+    print("Kolmogorov-Smirnov test")
+    print(kstest(np.log(column), 'norm'))
+    print('*'*50)
+
+
+    print('############################# SQUARE ROOT TRANSFORMATION #############################')
+    print(stats.normaltest(np.sqrt(column)))
+    print("Shapiro-Wilk test")
+    print(shapiro(np.sqrt(column)))
+    print("Kolmogorov-Smirnov test")
+    print(kstest(np.sqrt(column), 'norm'))
+    print('*'*50)
+
+    print('############################# CUBE  ROOT TRANSFORMATION #############################')
+    print(stats.normaltest(np.cbrt(column)))
+    print("Shapiro-Wilk test")
+    print(shapiro(np.cbrt(column)))
+    print("Kolmogorov-Smirnov test")
+    print(kstest(np.cbrt(column), 'norm'))
+    print('*'*50)
+
+    fig, axs = plt.subplots(nrows=1, ncols=4, figsize = (18,6))
+    #add title to each histogram
+    axs[0].set_title('Original Data')
+    axs[1].set_title('Log Transformed Data')
+    axs[2].set_title('Sqrt Transformed Data')
+    axs[3].set_title('Cup Transformed Data')
+    #create histograms
+    axs[0].hist(column, edgecolor='black')
+    axs[1].hist(np.log(column), edgecolor='black')
+    axs[2].hist(np.sqrt(column), edgecolor='black')
+    axs[3].hist(np.cbrt(column), edgecolor='black')
+
+    from scipy.stats import probplot
+    fig, axs = plt.subplots(nrows=1, ncols=4, figsize = (18,6))
+    
+    # Create a QQ plot on the first subplot
+    # A probability plot is a graphical representation of how closely a sample of data fits a theoretical distribution. In a probability plot, the horizontal axis represents the theoretical quantiles of the distribution, and the vertical axis represents the sample data. If the points in the plot fall approximately along a straight line, it suggests that the sample data is well-modeled by the theoretical distribution.
+
+    #For example, in a probability plot of data with a normal distribution, the points should fall roughly along a straight line. If the points deviate significantly from a straight line, it suggests that the data may not be well-modeled by a normal distribution.
+    probplot(column, plot = axs[0])
+    probplot(np.log(column), dist='norm', plot = axs[1])
+    probplot(np.sqrt(column), dist='norm', plot = axs[2])
+    probplot(np.cbrt(column), dist='norm', plot = axs[3])
+
+        #add title to each histogram
+    axs[0].set_title('Original Data')
+    axs[1].set_title('Log Transformed Data')
+    axs[2].set_title('Sqrt Transformed Data')
+    axs[3].set_title('Cup Transformed Data')
+
+    
 
 def get_outliers_length(data):
     """
