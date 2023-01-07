@@ -49,10 +49,10 @@ def normalize(column):
 
     fig, axs = plt.subplots(nrows=1, ncols=4, figsize = (18,6))
     #add title to each histogram
-    axs[0].set_title('Original Data')
-    axs[1].set_title('Log Transformed Data')
-    axs[2].set_title('Sqrt Transformed Data')
-    axs[3].set_title('Cup Transformed Data')
+    axs[0].set_title(f'Original Data : {column.name}')
+    axs[1].set_title(f'Log Transformed Data : {column.name}')
+    axs[2].set_title(f'Sqrt Transformed Data : {column.name}')
+    axs[3].set_title(f'Cup Transformed Data : {column.name}')
     #create histograms
     axs[0].hist(column, edgecolor='black')
     axs[1].hist(np.log(column), edgecolor='black')
@@ -72,10 +72,10 @@ def normalize(column):
     probplot(np.cbrt(column), dist='norm', plot = axs[3])
 
         #add title to each histogram
-    axs[0].set_title('Original Data')
-    axs[1].set_title('Log Transformed Data')
-    axs[2].set_title('Sqrt Transformed Data')
-    axs[3].set_title('Cup Transformed Data')
+    axs[0].set_title(f'Original Data : {column.name}')
+    axs[1].set_title(f'Log Transformed Data : {column.name}')
+    axs[2].set_title(f'Sqrt Transformed Data : {column.name}')
+    axs[3].set_title(f'Cup Transformed Data : {column.name}')
 
     
 
