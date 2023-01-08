@@ -9,6 +9,8 @@ from scipy.stats import kstest
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+from scipy.stats import probplot
+from sklearn.model_selection import train_test_split,GridSearchCV,learning_curve, RandomizedSearchCV, cross_val_score, KFold
 
 
 def normalize(column):
@@ -59,14 +61,14 @@ def normalize(column):
     axs[2].hist(np.sqrt(column), edgecolor='black')
     axs[3].hist(np.cbrt(column), edgecolor='black')
 
-    from scipy.stats import probplot
+    
     fig, axs = plt.subplots(nrows=1, ncols=4, figsize = (18,6))
     
     # Create a QQ plot on the first subplot
     # A probability plot is a graphical representation of how closely a sample of data fits a theoretical distribution. In a probability plot, the horizontal axis represents the theoretical quantiles of the distribution, and the vertical axis represents the sample data. If the points in the plot fall approximately along a straight line, it suggests that the sample data is well-modeled by the theoretical distribution.
 
     #For example, in a probability plot of data with a normal distribution, the points should fall roughly along a straight line. If the points deviate significantly from a straight line, it suggests that the data may not be well-modeled by a normal distribution.
-    probplot(column, plot = axs[0])
+    probplot(column, dist='norm', plot = axs[0])
     probplot(np.log(column), dist='norm', plot = axs[1])
     probplot(np.sqrt(column), dist='norm', plot = axs[2])
     probplot(np.cbrt(column), dist='norm', plot = axs[3])
@@ -697,4 +699,138 @@ def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.0
 
         
     
-    
+def one_hot_encode_dataframe(df):
+    """
+    This function takes a Pandas dataframe as input, finds all the columns of dtype 'object' and
+    one-hot encodes them. The original dataframe is not modified.
+    Parameters:
+    df (pandas.DataFrame): The dataframe to one-hot encode.
+
+    Returns:
+    pandas.DataFrame: The one-hot encoded dataframe.
+
+    Example:
+    --------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'Sex': ['Male', 'Female', 'Female'], 'Age': [25, 30, 35]})
+    >>> one_hot_encode_dataframe(df)
+        Age  Sex_Female  Sex_Male
+    0   25.0         0.0       1.0
+    1   30.0         1.0       0.0
+    2   35.0         1.0       0.0
+    """
+    df_encoded = df.copy()
+    object_columns = [c for c in df_encoded.columns if df_encoded[c].dtype == 'object']
+    for column in object_columns:
+        dummies = pd.get_dummies(df_encoded[column], prefix=f'{column}_')
+        df_encoded = pd.concat([df_encoded, dummies], axis=1)
+        df_encoded = df_encoded.drop(column, axis=1)
+        
+    print(df_encoded.shape)
+    return df_encoded
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False):
+    if include_learning_curve == True:
+        ncols = 3
+    else :
+        ncols = 2
+    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(25, 8))
+    axs = axs.ravel()
+
+    fig.suptitle(f'{model_name}')
+
+    axs[0].scatter(y_pred, y_test, alpha=0.5)
+    axs[0].plot(np.arange(max(y_test.values)), np.arange(max(y_test.values)), '-', color='r')
+    axs[0].set_xlabel('Prediction')
+    axs[0].set_ylabel('Real')
+    axs[0].set_title("")
+    axs[0].legend([f'R2 : {round(R2,2)} \nMAE : {round(MAE,2)} \nRMSE : {round(RMSE,2)}'], loc='upper left')
+
+    REG = pd.DataFrame(y_test)
+    REG['y_pred'] = y_pred
+    REG.columns = ['y_test', 'y_pred']
+    residuals = abs(REG['y_pred'] - REG['y_test'])
+    del REG
+
+    parplot = probplot(residuals, dist='norm', plot=axs[1])
+    axs[1].set_title("Probility plot of residuals")
+
+    if include_learning_curve:
+        # Generate the learning curve data
+        train_sizes, train_scores, test_scores = learning_curve(model, X_train, y_train, cv=5, train_sizes=np.linspace(0.1, 1.0, 100))
+
+        # Extract the mean training and test scores
+        mean_train_scores = np.mean(train_scores, axis=1)
+        mean_test_scores = np.mean(test_scores, axis=1)
+
+        # Plot the mean training and test scores
+        axs[2].plot(train_sizes, mean_train_scores, label='Training')
+        axs[2].plot(train_sizes, mean_test_scores, label='Validation')
+        axs[2].set_xlabel('Number of Training Samples')
+        axs[2].set_ylabel('Model Score')
+        axs[2].legend()
+
+    plt.show()
+
+
