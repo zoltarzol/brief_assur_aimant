@@ -789,7 +789,6 @@ def one_hot_encode_dataframe(df):
 
 
 
-
 def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False):
     if include_learning_curve == True:
         ncols = 3
@@ -818,19 +817,22 @@ def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, 
 
     if include_learning_curve:
         # Generate the learning curve data
-        train_sizes, train_scores, test_scores = learning_curve(model, X_train, y_train, cv=5, train_sizes=np.linspace(0.1, 1.0, 100))
+        train_sizes, train_scores, test_scores = learning_curve(model, X_train, y_train, cv=10, train_sizes=np.linspace(0.01, 1.0, 100))
 
         # Extract the mean training and test scores
         mean_train_scores = np.mean(train_scores, axis=1)
         mean_test_scores = np.mean(test_scores, axis=1)
+        std_train = np.std(train_scores, axis=1)
+        std_test = np.std(test_scores, axis=1)
 
         # Plot the mean training and test scores
-        axs[2].plot(train_sizes, mean_train_scores, label='Training')
-        axs[2].plot(train_sizes, mean_test_scores, label='Validation')
+        axs[2].plot(train_sizes, mean_train_scores, label='Training', color = 'blue')
+        axs[2].fill_between(train_sizes, mean_train_scores + std_train, mean_train_scores - std_train, alpha=0.15, color='blue')
+        axs[2].plot(train_sizes, mean_test_scores, label='Validation', color = 'green')
+        axs[2].fill_between(train_sizes, mean_test_scores + std_test, mean_test_scores - std_test, alpha=0.15, color='green')
         axs[2].set_xlabel('Number of Training Samples')
         axs[2].set_ylabel('Model Score')
         axs[2].legend()
 
     plt.show()
-
 
