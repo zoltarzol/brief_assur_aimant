@@ -804,7 +804,7 @@ def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, 
     axs[0].set_xlabel('Prediction')
     axs[0].set_ylabel('Real')
     axs[0].set_title("")
-    axs[0].legend([f'R2 : {round(R2,2)} \nMAE : {round(MAE,2)} \nRMSE : {round(RMSE,2)}'], loc='upper left')
+    axs[0].legend([f'R2 : {round(R2,4)} \nMAE : {round(MAE,4)} \nRMSE : {round(RMSE,4)}'], loc='upper left')
 
     REG = pd.DataFrame(y_test)
     REG['y_pred'] = y_pred
@@ -836,3 +836,46 @@ def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, 
 
     plt.show()
 
+
+
+
+
+
+
+
+
+def get_best_params(PolynomialFeatures_degree, model, param_grid, X_train, y_train):
+    """
+    This function returns the best hyperparameters for the given model, using GridSearchCV.
+    Parameters:
+    PolynomialFeatures_degree (int): The degree of polynomial features to include.
+    model (sklearn model): The model to fit.
+    param_grid (dict): The hyperparameter values to search over.
+    X_train (pandas DataFrame): The training data.
+    y_train (pandas Series): The training labels.
+
+    Returns:
+    best_params (dict): The best hyperparameters for the model.
+
+    Example:
+    get_best_params(PolynomialFeatures_degree = 1, 
+                    model=Lasso(max_iter=100000, tol=0.0001,random_state=42, selection='cyclic'), 
+                    param_grid= {'lasso__alpha': np.linspace(0.01,100,1000)},
+                    X_train = X_train, y_train = y_train)
+    """
+    print("This function returns the best hyperparameters for the given model, using GridSearchCV.")
+
+    # Assert that model is a scikit-learn model
+    assert hasattr(model, 'fit') and callable(getattr(model, 'fit')), 'model must be a scikit-learn model'
+
+    # Assert that param_grid is a dictionary
+    assert isinstance(param_grid, dict), 'param_grid must be a dictionary'
+    confirm = input("Are you sure ?, this may take a few minutes [Y,n]")
+    if confirm == "Y" :
+        model = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), model)
+        param_grid = param_grid
+        grid_search = GridSearchCV(model, param_grid, cv=5)
+        grid_search.fit(X_train, y_train)
+        best_params = grid_search.best_params_
+        print(best_params)
+        # model = grid_search.best_estimator_
