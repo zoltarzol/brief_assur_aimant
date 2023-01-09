@@ -11,7 +11,9 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from scipy.stats import probplot
 from sklearn.model_selection import train_test_split,GridSearchCV,learning_curve, RandomizedSearchCV, cross_val_score, KFold
-
+from sklearn.metrics import *
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder,StandardScaler,PolynomialFeatures,RobustScaler
 
 def normalize(column):
     print('############################# ORIGINAL DATA #############################')
@@ -844,7 +846,7 @@ def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, 
 
 
 
-def get_best_params(PolynomialFeatures_degree, model, param_grid, X_train, y_train):
+def get_best_params(PolynomialFeatures_degree, model, param_grid, preprocessor, X_train, y_train ):
     """
     This function returns the best hyperparameters for the given model, using GridSearchCV.
     Parameters:
@@ -878,4 +880,15 @@ def get_best_params(PolynomialFeatures_degree, model, param_grid, X_train, y_tra
         grid_search.fit(X_train, y_train)
         best_params = grid_search.best_params_
         print(best_params)
+        return best_params
         # model = grid_search.best_estimator_
+
+
+
+
+def get_metrics(model, y_test, X_test):
+    y_pred = model.predict(X_test)
+    R2 = r2_score(y_pred , y_test).round(4)
+    MAE = mean_absolute_error(y_pred , y_test)
+    RMSE = np.sqrt(mean_squared_error(y_pred , y_test))
+    return R2, MAE, RMSE, y_pred
