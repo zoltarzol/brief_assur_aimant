@@ -808,11 +808,11 @@ def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, 
     axs[0].set_title("")
     axs[0].legend([f'R2 : {round(R2,4)} \nMAE : {round(MAE,4)} \nRMSE : {round(RMSE,4)}'], loc='upper left')
 
-    REG = pd.DataFrame(y_test)
-    REG['y_pred'] = y_pred
-    REG.columns = ['y_test', 'y_pred']
-    residuals = abs(REG['y_pred'] - REG['y_test'])
-    del REG
+    REG_test = pd.DataFrame(y_test)
+    REG_test['y_pred'] = y_pred
+    REG_test.columns = ['y_test', 'y_pred']
+    residuals = abs(REG_test['y_pred'] - REG_test['y_test'])
+    del REG_test
 
     parplot = probplot(residuals, dist='norm', plot=axs[1])
     axs[1].set_title("Probility plot of residuals")
