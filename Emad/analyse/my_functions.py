@@ -935,7 +935,7 @@ def LR_with_CV(PolynomialFeatures_degree, X_train, y_train , X_test , y_test, pr
             print(f"RMSE: {round(RMSE,4)}")
             print(f"Model_score_test: {round(RMSE,4)}")
             print(f"Model_score_training: {round(RMSE,4)}")
-    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, model
 
 
     
@@ -990,7 +990,7 @@ def LASSO_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_te
     if isplot == True:
             plot_regression_results(f'LASSO (Polynomial degree={PolynomialFeatures})', Lasso_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=include_learning_curve)
 
-    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha, Lasso_model_PolynomialFeatures_1
 
 
 
@@ -1051,7 +1051,7 @@ def Ridge_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_te
     if isplot == True:
             plot_regression_results(f'Ridge (Polynomial degree={PolynomialFeatures})', Ridge_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=include_learning_curve)
 
-    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha, Ridge_model_PolynomialFeatures_1
 
 
 
@@ -1110,8 +1110,7 @@ def ElasticNet_with_CV(PolynomialFeatures_degree, Best_alpha, Best_elasticnet__l
     if isplot == True:
             plot_regression_results(f'ElasticNet (Polynomial degree={PolynomialFeatures})', ElasticNet_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=include_learning_curve)
 
-    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
-
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha, Best_elasticnet__l1_ratio, ElasticNet_model_PolynomialFeatures_1
 
 
 
