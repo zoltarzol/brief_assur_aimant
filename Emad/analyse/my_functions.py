@@ -14,6 +14,11 @@ from sklearn.model_selection import train_test_split,GridSearchCV,learning_curve
 from sklearn.metrics import *
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder,StandardScaler,PolynomialFeatures,RobustScaler
+from sklearn.linear_model import Ridge,LinearRegression,Lasso, ElasticNet
+from statistics import mean
+from statistics import stdev
+from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
+import statsmodels.api as sm
 
 def normalize(column):
     print('############################# ORIGINAL DATA #############################')
@@ -471,7 +476,7 @@ def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.0
         print(f'This suggests that there is a significant differences among the independent variable "{x_col}".')
         print(f"But we don't know which group is different from which.\nWe have to do post-hoc analysis using Tukey HSD (Honest Significant Difference) Test.")
         print()
-        from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
+       
         # compare the height between each diet, using 95% confidence interval 
         mc = MultiComparison(y, x)
         tukey_result = mc.tukeyhsd(alpha=0.05)
@@ -662,7 +667,7 @@ def one_way_anova(data: pd.DataFrame, y_col: str, x_col: str, alpha: float = 0.0
         print(f'This suggests that there is a significant differences among the independent variable "{x_col}".')
         print(f"But we don't know which group is different from which.\nWe have to do post-hoc analysis using Tukey HSD (Honest Significant Difference) Test.")
         print()
-        from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
+       
         # compare the height between each diet, using 95% confidence interval 
         mc = MultiComparison(y, x)
         tukey_result = mc.tukeyhsd(alpha=0.05)
@@ -791,7 +796,7 @@ def one_hot_encode_dataframe(df):
 
 
 
-def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False):
+def plot_regression_results(model_name, model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False):
     if include_learning_curve == True:
         ncols = 3
     else :
@@ -808,11 +813,9 @@ def plot_lasso_results(model_name, model, y_train, X_train, y_pred, y_test, R2, 
     axs[0].set_title("")
     axs[0].legend([f'R2 : {round(R2,4)} \nMAE : {round(MAE,4)} \nRMSE : {round(RMSE,4)}'], loc='upper left')
 
-    REG_test = pd.DataFrame(y_test)
-    REG_test['y_pred'] = y_pred
-    REG_test.columns = ['y_test', 'y_pred']
-    residuals = abs(REG_test['y_pred'] - REG_test['y_test'])
-    del REG_test
+    y_test_array = y_test.values
+    residuals = y_test_array - y_pred
+    residuals = list(residuals.flatten())
 
     parplot = probplot(residuals, dist='norm', plot=axs[1])
     axs[1].set_title("Probility plot of residuals")
@@ -892,3 +895,156 @@ def get_metrics(model, y_test, X_test):
     MAE = mean_absolute_error(y_pred , y_test)
     RMSE = np.sqrt(mean_squared_error(y_pred , y_test))
     return R2, MAE, RMSE, y_pred
+
+
+
+
+
+
+
+def LR_with_CV(PolynomialFeatures_degree, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42):
+    print(f"LR with Kfold CV (Polynomial degree={PolynomialFeatures_degree})")
+    print("="*50)
+    print()
+    PolynomialFeatures_degree = PolynomialFeatures_degree
+    model = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), LinearRegression()    )
+
+
+    kfold = KFold(n_splits=5, shuffle=shuffle, random_state=random_state)
+    scores = cross_val_score(model, X_train, y_train, cv=kfold)
+    print(scores)
+    print(mean(scores))
+    print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+
+    model.fit(X_train, y_train)
+    Model_score_test = model.score(X_test, y_test)
+    Model_score_training = model.score(X_train, y_train)
+
+    R2, MAE, RMSE, y_pred = get_metrics(model, y_test = y_test, X_test = X_test)
+    print(f"R2: {round(R2,4)}")
+    print(f"MAE: {round(MAE,4)}")
+    print(f"RMSE: {round(RMSE,4)}")
+    print(f"Model_score_test: {round(RMSE,4)}")
+    print(f"Model_score_training: {round(RMSE,4)}")
+
+    scores_mean = round(mean(scores),4)
+    scores_std = round(stdev(scores),4)
+    plot_regression_results(f'LR with Kfold CV (Polynomial degree={PolynomialFeatures})', model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False)
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std
+
+
+    
+def LASSO_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42):
+    print(f"LASSO with PolynomialFeatures(degree={PolynomialFeatures_degree})")
+    print("="*50)
+    print()
+
+    print('Lasso best alpha =  39.4321608040201')
+    print("time to find best alpha : 1min 10.6s")
+    #best={'lasso__alpha': 39.4321608040201}
+    Best_alpha = Best_alpha
+    model_parameters = Lasso(alpha=Best_alpha, max_iter=100000,random_state=42)
+    PolynomialFeatures_degree = 1
+
+    Lasso_model_PolynomialFeatures_1 = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), model_parameters)
+
+    kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+    scores = cross_val_score(Lasso_model_PolynomialFeatures_1, X_train, y_train, cv=kfold)
+    print(scores)
+    print(mean(scores))
+    print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+
+    Lasso_model_PolynomialFeatures_1.fit(X_train, y_train)
+
+    Model_score_test = Lasso_model_PolynomialFeatures_1.score(X_test, y_test)
+    Model_score_training = Lasso_model_PolynomialFeatures_1.score(X_train, y_train)
+    print(f"Lasso Score with PolynomialFeatures(degree={PolynomialFeatures}) : {Model_score_test}")
+    R2, MAE, RMSE, y_pred = get_metrics(Lasso_model_PolynomialFeatures_1, y_test = y_test, X_test = X_test)
+
+    plot_regression_results(f'Ridge (Polynomial degree={PolynomialFeatures})', Lasso_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False)
+    scores_mean = round(mean(scores),4)
+    scores_std = round(stdev(scores),4)
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
+
+
+def Ridg_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42):
+    print(f"Ridge with PolynomialFeatures(degree={PolynomialFeatures_degree})")
+    print("="*50)
+    print()
+
+    print('Ridge best alpha =  39.4321608040201')
+    print("time to find best alpha : 1min 10.6s")
+    #best={'Ridge': 39.4321608040201}
+    Best_alpha = Best_alpha
+    model_parameters = Ridge(alpha=Best_alpha, max_iter=100000,random_state=42)
+    PolynomialFeatures_degree = 1
+
+    Ridge_model_PolynomialFeatures_1 = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), model_parameters)
+
+    kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+    scores = cross_val_score(Ridge_model_PolynomialFeatures_1, X_train, y_train, cv=kfold)
+    print(scores)
+    print(mean(scores))
+    print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+
+    Ridge_model_PolynomialFeatures_1.fit(X_train, y_train)
+
+    Model_score_test = Ridge_model_PolynomialFeatures_1.score(X_test, y_test)
+    Model_score_training = Ridge_model_PolynomialFeatures_1.score(X_train, y_train)
+    print(f"Ridge Score with PolynomialFeatures(degree={PolynomialFeatures}) : {Model_score_test}")
+
+
+    R2, MAE, RMSE, y_pred = get_metrics(Ridge_model_PolynomialFeatures_1, y_test = y_test, X_test = X_test)
+
+    plot_regression_results(f'Ridge (Polynomial degree={PolynomialFeatures})', Ridge_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False)
+    scores_mean = round(mean(scores),4)
+    scores_std = round(stdev(scores),4)
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
+
+
+
+
+
+def get_index_to_remove_by_Cooks_Distance(X_train, y_train, preprocessor):
+    # Fit the transformer to the training data
+    preprocessor.fit(X_train)
+    X_test_pipe = preprocessor.transform(X_train)
+
+
+    # Get the names of the columns added by the OneHotEncoder
+    new_columns = preprocessor.get_feature_names_out()
+    new_columns = [w.replace('pipeline-1__', '') for w in new_columns]
+    new_columns = [w.replace('pipeline-2__', '') for w in new_columns]
+
+
+    newdf = pd.DataFrame(X_test_pipe)
+
+    newdf.columns = new_columns
+
+
+    X = sm.add_constant(newdf)
+    X = X.set_index(y_train.index)
+    estimation = sm.OLS(y_train, X_test_pipe).fit()
+
+    influence = estimation.get_influence().cooks_distance[0]
+
+    X['dcooks'] = influence
+    n = X.shape[0]
+    p = X.shape[1]
+    seuil_dcook = 4/(n-p)
+
+    index_to_be_removed = X[X['dcooks']>seuil_dcook].index
+
+    #plt.figure(figsize=(10,6))
+    #plt.bar(X.index, X['dcooks'])
+    #plt.xticks(np.arange(0, len(X), step=int(len(X)/10)))
+    #plt.xlabel('Observation')
+    #plt.ylabel('Cooks Distance')
+    # Plot the line
+    #plt.hlines(seuil_dcook, xmin=0, xmax=len(X_train), color='r')
+    #plt.show()
+    
+    return index_to_be_removed
+
+
+
