@@ -796,7 +796,7 @@ def one_hot_encode_dataframe(df):
 
 
 
-def plot_regression_results(model_name, model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False):
+def plot_regression_results(model_name, model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=True):
     if include_learning_curve == True:
         ncols = 3
     else :
@@ -902,103 +902,214 @@ def get_metrics(model, y_test, X_test):
 
 
 
-def LR_with_CV(PolynomialFeatures_degree, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42):
-    print(f"LR with Kfold CV (Polynomial degree={PolynomialFeatures_degree})")
-    print("="*50)
-    print()
+def LR_with_CV(PolynomialFeatures_degree, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42, isplot= False, isinfo = False, include_learning_curve = False):
+
     PolynomialFeatures_degree = PolynomialFeatures_degree
     model = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), LinearRegression()    )
 
 
     kfold = KFold(n_splits=5, shuffle=shuffle, random_state=random_state)
     scores = cross_val_score(model, X_train, y_train, cv=kfold)
-    print(scores)
-    print(mean(scores))
-    print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+
 
     model.fit(X_train, y_train)
     Model_score_test = model.score(X_test, y_test)
     Model_score_training = model.score(X_train, y_train)
 
     R2, MAE, RMSE, y_pred = get_metrics(model, y_test = y_test, X_test = X_test)
-    print(f"R2: {round(R2,4)}")
-    print(f"MAE: {round(MAE,4)}")
-    print(f"RMSE: {round(RMSE,4)}")
-    print(f"Model_score_test: {round(RMSE,4)}")
-    print(f"Model_score_training: {round(RMSE,4)}")
+
 
     scores_mean = round(mean(scores),4)
     scores_std = round(stdev(scores),4)
-    plot_regression_results(f'LR with Kfold CV (Polynomial degree={PolynomialFeatures})', model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False)
+    if isplot == True:
+        plot_regression_results(f'LR with Kfold CV (Polynomial degree={PolynomialFeatures})', model, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve)
+    if isinfo == True:
+            print(f"LR with Kfold CV (Polynomial degree={PolynomialFeatures_degree})")
+            print("="*50)
+            print()
+            print(scores)
+            print(mean(scores))
+            print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+            print(f"R2: {round(R2,4)}")
+            print(f"MAE: {round(MAE,4)}")
+            print(f"RMSE: {round(RMSE,4)}")
+            print(f"Model_score_test: {round(RMSE,4)}")
+            print(f"Model_score_training: {round(RMSE,4)}")
     return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std
 
 
     
-def LASSO_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42):
-    print(f"LASSO with PolynomialFeatures(degree={PolynomialFeatures_degree})")
-    print("="*50)
-    print()
 
-    print('Lasso best alpha =  39.4321608040201')
-    print("time to find best alpha : 1min 10.6s")
+
+
+
+
+
+
+
+
+
+
+def LASSO_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42, isplot= False, isinfo = False, include_learning_curve = False):
+
     #best={'lasso__alpha': 39.4321608040201}
     Best_alpha = Best_alpha
     model_parameters = Lasso(alpha=Best_alpha, max_iter=100000,random_state=42)
-    PolynomialFeatures_degree = 1
+    PolynomialFeatures_degree = PolynomialFeatures_degree
 
     Lasso_model_PolynomialFeatures_1 = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), model_parameters)
 
     kfold = KFold(n_splits=5, shuffle=True, random_state=42)
     scores = cross_val_score(Lasso_model_PolynomialFeatures_1, X_train, y_train, cv=kfold)
-    print(scores)
-    print(mean(scores))
-    print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+
 
     Lasso_model_PolynomialFeatures_1.fit(X_train, y_train)
 
     Model_score_test = Lasso_model_PolynomialFeatures_1.score(X_test, y_test)
     Model_score_training = Lasso_model_PolynomialFeatures_1.score(X_train, y_train)
-    print(f"Lasso Score with PolynomialFeatures(degree={PolynomialFeatures}) : {Model_score_test}")
+
     R2, MAE, RMSE, y_pred = get_metrics(Lasso_model_PolynomialFeatures_1, y_test = y_test, X_test = X_test)
 
-    plot_regression_results(f'Ridge (Polynomial degree={PolynomialFeatures})', Lasso_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False)
+
+
     scores_mean = round(mean(scores),4)
     scores_std = round(stdev(scores),4)
+    if isinfo == True:
+            print(f"LASSO with PolynomialFeatures(degree={PolynomialFeatures_degree})")
+            print("="*50)
+            print(f'LASSO best alpha =  {Best_alpha}')
+            print()
+            print(scores)
+            print(mean(scores))
+            print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+            print(f"R2: {round(R2,4)}")
+            print(f"MAE: {round(MAE,4)}")
+            print(f"RMSE: {round(RMSE,4)}")
+            print(f"Model_score_test: {round(RMSE,4)}")
+            print(f"Model_score_training: {round(RMSE,4)}")
+    if isplot == True:
+            plot_regression_results(f'LASSO (Polynomial degree={PolynomialFeatures})', Lasso_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=include_learning_curve)
+
     return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
 
 
-def Ridg_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42):
-    print(f"Ridge with PolynomialFeatures(degree={PolynomialFeatures_degree})")
-    print("="*50)
-    print()
 
-    print('Ridge best alpha =  39.4321608040201')
-    print("time to find best alpha : 1min 10.6s")
-    #best={'Ridge': 39.4321608040201}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def Ridge_with_CV(PolynomialFeatures_degree, Best_alpha, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42, isplot= False, isinfo = False, include_learning_curve = False):
+
+    #best={'Ridge__alpha': 39.4321608040201}
     Best_alpha = Best_alpha
     model_parameters = Ridge(alpha=Best_alpha, max_iter=100000,random_state=42)
-    PolynomialFeatures_degree = 1
+    PolynomialFeatures_degree = PolynomialFeatures_degree
 
     Ridge_model_PolynomialFeatures_1 = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), model_parameters)
 
     kfold = KFold(n_splits=5, shuffle=True, random_state=42)
     scores = cross_val_score(Ridge_model_PolynomialFeatures_1, X_train, y_train, cv=kfold)
-    print(scores)
-    print(mean(scores))
-    print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+
 
     Ridge_model_PolynomialFeatures_1.fit(X_train, y_train)
 
     Model_score_test = Ridge_model_PolynomialFeatures_1.score(X_test, y_test)
     Model_score_training = Ridge_model_PolynomialFeatures_1.score(X_train, y_train)
-    print(f"Ridge Score with PolynomialFeatures(degree={PolynomialFeatures}) : {Model_score_test}")
-
 
     R2, MAE, RMSE, y_pred = get_metrics(Ridge_model_PolynomialFeatures_1, y_test = y_test, X_test = X_test)
 
-    plot_regression_results(f'Ridge (Polynomial degree={PolynomialFeatures})', Ridge_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=False)
+
+
     scores_mean = round(mean(scores),4)
     scores_std = round(stdev(scores),4)
+    if isinfo == True:
+            print(f"Ridge with PolynomialFeatures(degree={PolynomialFeatures_degree})")
+            print("="*50)
+            print(f'Ridge best alpha =  {Best_alpha}')
+            print()
+            print(scores)
+            print(mean(scores))
+            print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+            print(f"R2: {round(R2,4)}")
+            print(f"MAE: {round(MAE,4)}")
+            print(f"RMSE: {round(RMSE,4)}")
+            print(f"Model_score_test: {round(RMSE,4)}")
+            print(f"Model_score_training: {round(RMSE,4)}")
+    if isplot == True:
+            plot_regression_results(f'Ridge (Polynomial degree={PolynomialFeatures})', Ridge_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=include_learning_curve)
+
+    return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def ElasticNet_with_CV(PolynomialFeatures_degree, Best_alpha, Best_elasticnet__l1_ratio, X_train, y_train , X_test , y_test, preprocessor , shuffle=True, random_state=42, isplot= False, isinfo = False, include_learning_curve = False):
+
+    #best={'ElasticNet__alpha': 39.4321608040201}
+    Best_alpha = Best_alpha
+    Best_elasticnet__l1_ratio = Best_elasticnet__l1_ratio
+    model_parameters = ElasticNet(alpha=Best_alpha,l1_ratio=Best_elasticnet__l1_ratio,  max_iter=100000,random_state=42)
+    PolynomialFeatures_degree = PolynomialFeatures_degree
+
+    ElasticNet_model_PolynomialFeatures_1 = make_pipeline(preprocessor, PolynomialFeatures(degree=PolynomialFeatures_degree), model_parameters)
+
+    kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+    scores = cross_val_score(ElasticNet_model_PolynomialFeatures_1, X_train, y_train, cv=kfold)
+
+
+    ElasticNet_model_PolynomialFeatures_1.fit(X_train, y_train)
+
+    Model_score_test = ElasticNet_model_PolynomialFeatures_1.score(X_test, y_test)
+    Model_score_training = ElasticNet_model_PolynomialFeatures_1.score(X_train, y_train)
+
+    R2, MAE, RMSE, y_pred = get_metrics(ElasticNet_model_PolynomialFeatures_1, y_test = y_test, X_test = X_test)
+
+
+
+    scores_mean = round(mean(scores),4)
+    scores_std = round(stdev(scores),4)
+    if isinfo == True:
+            print(f"ElasticNet with PolynomialFeatures(degree={PolynomialFeatures_degree})")
+            print("="*50)
+
+            print()
+            print('ElasticNet best alpha =  0.32')
+            print('ElasticNet best elasticnet__l1_ratio =  0.32')
+            print(scores)
+            print(mean(scores))
+            print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+            print(f"R2: {round(R2,4)}")
+            print(f"MAE: {round(MAE,4)}")
+            print(f"RMSE: {round(RMSE,4)}")
+            print(f"Model_score_test: {round(RMSE,4)}")
+            print(f"Model_score_training: {round(RMSE,4)}")
+    if isplot == True:
+            plot_regression_results(f'ElasticNet (Polynomial degree={PolynomialFeatures})', ElasticNet_model_PolynomialFeatures_1, y_train, X_train, y_pred, y_test, R2, MAE, RMSE, include_learning_curve=include_learning_curve)
+
     return R2, MAE, RMSE, Model_score_test, Model_score_training, scores_mean, scores_std, Best_alpha
 
 
