@@ -1115,7 +1115,7 @@ def ElasticNet_with_CV(PolynomialFeatures_degree, Best_alpha, Best_elasticnet__l
 
 
 
-def get_index_to_remove_by_Cooks_Distance(X_train, y_train, preprocessor):
+def get_index_to_remove_by_Cooks_Distance(X_train, y_train, preprocessor, divided_by):
     # Fit the transformer to the training data
     preprocessor.fit(X_train)
     X_test_pipe = preprocessor.transform(X_train)
@@ -1141,19 +1141,22 @@ def get_index_to_remove_by_Cooks_Distance(X_train, y_train, preprocessor):
     X['dcooks'] = influence
     n = X.shape[0]
     p = X.shape[1]
-    seuil_dcook = 4/(n-p)
-
+    if divided_by == "All":
+        seuil_dcook = 4/n
+    else :
+        seuil_dcook = 4/(n-p)
     index_to_be_removed = X[X['dcooks']>seuil_dcook].index
 
-    #plt.figure(figsize=(10,6))
-    #plt.bar(X.index, X['dcooks'])
-    #plt.xticks(np.arange(0, len(X), step=int(len(X)/10)))
-    #plt.xlabel('Observation')
-    #plt.ylabel('Cooks Distance')
-    # Plot the line
-    #plt.hlines(seuil_dcook, xmin=0, xmax=len(X_train), color='r')
-    #plt.show()
-    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 6))
+    ax1.bar(X.index, X['dcooks'])
+    ax1.set_xticks(np.arange(0, len(X), step=int(len(X)/10)))
+    ax1.set_xlabel('Observation')
+    ax1.set_ylabel('Cooks Distance')
+    ax1.hlines(seuil_dcook, xmin=0, xmax=len(X_train), color='r')
+
+    sm.graphics.influence_plot(estimation, alpha  = 0.05, criterion="cooks", ax=ax2)
+    plt.show()
+
     return index_to_be_removed
 
 
