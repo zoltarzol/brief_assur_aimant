@@ -1152,7 +1152,10 @@ def get_index_to_remove_by_Cooks_Distance(X_train, y_train, preprocessor, divide
     ax1.set_xticks(np.arange(0, len(X), step=int(len(X)/10)))
     ax1.set_xlabel('Observation')
     ax1.set_ylabel('Cooks Distance')
-    ax1.hlines(seuil_dcook, xmin=0, xmax=len(X_train), color='r')
+    ax1.set_ylim(0,X['dcooks'].max()/2)
+    ax1.axhline(y=seuil_dcook, color='r', linestyle='--',label='Threshold')
+
+    # ax1.hlines(seuil_dcook, xmin=0, xmax=len(X_train), color='r')
 
     sm.graphics.influence_plot(estimation, alpha  = 0.05, criterion="cooks", ax=ax2)
     plt.show()
